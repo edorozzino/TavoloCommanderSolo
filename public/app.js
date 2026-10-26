@@ -17,7 +17,7 @@
   const inviteParams = new URLSearchParams(location.search);
   let invited = inviteParams.get('t') ? { room: inviteParams.get('t').trim().toLowerCase().slice(0, 20), mode: inviteParams.get('m') === 'auto' ? 'auto' : 'lan' } : null;
   if (invited) {
-    history.replaceState(null, '', '/');
+    history.replaceState(null, '', location.pathname);
     session = null;
     store.del('ct-session');
     store.del('ct-auto-session');
@@ -1002,7 +1002,7 @@
 
   // ---------- App installabile (PWA) ----------
   if ('serviceWorker' in navigator && window.isSecureContext) {
-    navigator.serviceWorker.register('/sw.js').catch(() => { /* senza service worker l'app funziona lo stesso */ });
+    navigator.serviceWorker.register('sw.js').catch(() => { /* senza service worker l'app funziona lo stesso */ });
   }
   let installPrompt = null;
   window.addEventListener('beforeinstallprompt', (e) => {

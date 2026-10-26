@@ -9,9 +9,14 @@
     "remote": "node server.js --tailscale",
     "public": "node server.js --funnel",
     "test": "node --test test/*.test.js",
-    "fuzz": "node scripts/fuzz.js"
+    "fuzz": "node scripts/fuzz.js",
+    "build": "node scripts/build-web.js",
+    "web": "node scripts/build-web.js --serve"
   },
   "dependencies": {
     "ws": "8.18.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   }
 }

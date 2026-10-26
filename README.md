@@ -4,6 +4,18 @@ Tavolo virtuale per giocare a Magic: The Gathering in formato **Commander** in r
 (stile Cockatrice/YGOPro, ma nel browser). Le regole le applicate voi giocatori, come al tavolo vero:
 l'app tiene traccia di carte, zone, vita, danni da comandante e informazioni nascoste.
 
+## Versione da telefono, senza server
+
+Oltre al server Node, questo progetto si pubblica come sito statico su **GitHub Pages**: la partita con regole contro il computer
+e l'Accademia girano interamente nel telefono (il codice del server è impacchettato in `local-server.js`), i mazzi si salvano
+nella memoria del dispositivo e, dopo la prima apertura, funziona anche offline. Il tavolo libero in LAN e gli inviti agli amici
+restano possibili solo con il server sul computer.
+
+- `npm run build` prepara la versione in `dist/`; `npm run web` la prova sul computer su http://localhost:8080
+- a ogni push su `main` GitHub Actions esegue i test e la pubblica (`.github/workflows/pages.yml`)
+- sull'iPhone: apri il sito in **Safari** → Condividi → **Aggiungi alla schermata Home**
+- le partite stanno in memoria: se iOS chiude l'app in background, la partita in corso si perde (i mazzi no)
+
 ## Avvio
 
 Serve [Node.js](https://nodejs.org) 18 o superiore.
