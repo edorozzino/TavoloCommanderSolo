@@ -16,6 +16,7 @@ function objectView(g, o, ctx, { own = false, castable = false } = {}) {
     name: o.name,
     img: ctx.images[o.name] || null,
     art: ctx.arts?.[o.name] || null, // solo l'illustrazione, per le carte piccole sui telefoni
+    artist: ctx.artists?.[o.name] || null,
     types: o.def.types,
     subtypes: o.def.subtypes || [],
     controller: o.controller,
@@ -143,8 +144,8 @@ function decisionView(g, d, viewer, ctx) {
   }
 }
 
-function buildView(g, viewer, { names = {}, images = {}, arts = {} } = {}) {
-  const ctx = { viewer, images, arts };
+function buildView(g, viewer, { names = {}, images = {}, arts = {}, artists = {} } = {}) {
+  const ctx = { viewer, images, arts, artists };
   const zone = (pid, z, opts) => g.zone(pid, z).map((o) => objectView(g, o, ctx, opts));
   const canAct = g.priority === viewer && !g.decision;
   return {

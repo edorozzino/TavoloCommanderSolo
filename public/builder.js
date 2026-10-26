@@ -48,6 +48,7 @@
     try {
       const r = await api('cards', { method: 'POST', body: { names: missing } });
       Object.assign(info, r.cards);
+      CT.noteArtists(r.cards);
       if (r.notFound.length) toast('Carte non trovate su Scryfall: ' + r.notFound.join(', '), 7000);
     } catch (e) {
       toast('Impossibile contattare Scryfall: ' + e.message);
@@ -312,6 +313,7 @@
         results = [];
       } else {
         for (const c of r.cards) info[c.name] = c;
+        CT.noteArtists(r.cards);
         results = reset ? r.cards : results.concat(r.cards);
         hasMore = r.hasMore;
         $('#bs-status').textContent = r.total ? `${r.total} risultati` : 'Nessun risultato';
@@ -357,7 +359,7 @@
     const legal = { legal: ['ok', 'Legale in Commander'], banned: ['bad', 'Bandita in Commander'] }[c.legal] || ['bad', 'Non legale in Commander'];
     const pt = c.power != null ? `<div class="bi-pt">${esc(c.power)}/${esc(c.toughness)}</div>` : '';
     el.innerHTML = `
-      ${img ? `<img class="bi-img" src="${esc(img)}" alt="${esc(c.name)}">` : ''}
+      ${img ? `<img class="bi-img" src="${esc(img)}" alt="${esc(c.name)}">${CT.credit(img)}` : ''}
       ${c.imgBack ? '<button id="bi-flip" class="small">↻ Gira la carta</button>' : ''}
       <div class="bi-name">${esc(c.name)} <span class="bi-cost">${mana(c.manaCost)}</span></div>
       <div class="bi-type">${esc(c.type)}</div>

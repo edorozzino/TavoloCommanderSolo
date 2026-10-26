@@ -10,6 +10,16 @@
     del(k) { try { localStorage.removeItem(k); } catch { /* storage non disponibile */ } },
   };
 
+  // Artista di ogni immagine ricevuta, per citarlo sotto le carte ingrandite (come chiede Scryfall)
+  const artists = new Map();
+  function noteArtists(value) {
+    if (Array.isArray(value)) return value.forEach(noteArtists);
+    if (!value || typeof value !== 'object') return;
+    if (value.artist) for (const k of ['img', 'imgBack', 'art']) if (value[k]) artists.set(value[k], value.artist);
+    Object.values(value).forEach(noteArtists);
+  }
+  const credit = (img) => (artists.get(img) ? `<div class="credit">Illustrazione di ${esc(artists.get(img))}</div>` : '');
+
   let ws = null;
   let S = null; // stato ricevuto dal server
   let session = store.get('ct-session'); // { room, name, pid }
@@ -74,6 +84,7 @@
       const prev = S;
       if (prev) FX.capture();
       S = msg.s;
+      noteArtists(S.players);
       render();
       if (prev) {
         FX.play({ where: (key) => findCard(key.slice(1))?.zone || null });
@@ -993,9 +1004,11 @@
     inGame: () => !!S,
     playerName: () => me()?.name || store.get('ct-name', ''),
     // Carta ingrandita a tutto schermo (sui telefoni si apre con la pressione lunga)
+    noteArtists,
+    credit,
     zoom: (img, caption = '') => {
       viewer = null;
-      openModal(`<div class="row" style="justify-content:center"><img src="${esc(img)}" alt="" class="zoom-img"></div>
+      openModal(`<div class="row" style="justify-content:center"><img src="${esc(img)}" alt="" class="zoom-img"></div>${credit(img)}
         ${caption ? `<p class="muted">${esc(caption)}</p>` : ''}<div class="row"><span class="grow"></span><button data-close>Chiudi</button></div>`);
     },
   };

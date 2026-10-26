@@ -74,6 +74,7 @@
       const wasMyDecision = myDecision();
       const prev = G();
       M = msg;
+      if (msg.game) CT.noteArtists(msg.game);
       if (!myDecision() || (wasMyDecision && wasMyDecision.type !== myDecision()?.type)) resetDecisionUi();
       if (M.lesson?.done && !doneLessons().includes(M.lesson.id)) CT.store.set('ct-academy-done', [...doneLessons(), M.lesson.id]);
       if (prev && G()) FX.capture();
@@ -451,7 +452,7 @@
         return `<div class="${c.join(' ')}" style="--i:${k};${o.img ? `background-image:url('${esc(o.img)}')` : ''}" data-oid="${o.id}" data-zone="hand" data-fx="c${o.cardId}" title="${esc(o.name)}">${o.img ? '' : `<span>${esc(o.name)}</span>`}</div>`;
       }).join('') || '<span class="muted">Mano vuota</span>'}</div>
       <aside class="mg-side">
-        <div id="auto-preview" class="mg-preview">${pv?.img ? `<img src="${esc(pv.img)}" alt="${esc(pv.name)}">` : `<span class="muted">${CT.hover() ? 'Passa sopra una carta per vederla' : 'Tocca una carta per vederla'}</span>`}</div>
+        <div id="auto-preview" class="mg-preview">${pv?.img ? `<img src="${esc(pv.img)}" alt="${esc(pv.name)}">${CT.credit(pv.img)}` : `<span class="muted">${CT.hover() ? 'Passa sopra una carta per vederla' : 'Tocca una carta per vederla'}</span>`}</div>
         ${M.lesson ? `<div class="auto-lesson"><b>${esc(M.lesson.goal)}</b><div class="lesson-hint">💡 ${esc(M.lesson.hint)}</div></div>` : ''}
         <div class="auto-prompt">${promptHtml()}</div>
         <div class="mg-actions">
@@ -811,12 +812,12 @@
     if (!o) return;
     previewId = o.id;
     if (CT.compact()) {
-      pv.innerHTML = o.img ? `<img src="${esc(o.img)}" alt="${esc(o.name)}">` : `<b>${esc(o.name)}</b>`;
+      pv.innerHTML = o.img ? `<img src="${esc(o.img)}" alt="${esc(o.name)}">${CT.credit(o.img)}` : `<b>${esc(o.name)}</b>`;
       return;
     }
     const kws = (o.keywords || []).map((k) => KW[k] || k).join(', ');
     pv.innerHTML = o.img
-      ? `<img src="${esc(o.img)}" alt="${esc(o.name)}">${kws ? `<div class="muted">${esc(kws)}</div>` : ''}`
+      ? `<img src="${esc(o.img)}" alt="${esc(o.name)}">${CT.credit(o.img)}${kws ? `<div class="muted">${esc(kws)}</div>` : ''}`
       : `<b>${esc(o.name)}</b><div class="muted">${esc([...o.types, ...o.subtypes].join(' '))}</div>${o.power != null ? `<div>${o.power}/${o.toughness}</div>` : ''}<div class="muted">${esc(kws)}</div>`;
   });
 

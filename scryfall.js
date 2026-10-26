@@ -34,6 +34,8 @@ async function throttle() {
   if (wait) await sleep(wait);
 }
 const key = (name) => name.trim().toLowerCase();
+// Le voci salvate dalle versioni precedenti non hanno il testo della carta o l'artista: le aggiorno
+const complete = (info) => info?.oracle != null && info.artist !== undefined;
 
 function simplify(card) {
   const faces = card.card_faces || [];
@@ -45,6 +47,7 @@ function simplify(card) {
     img: img || null,
     imgBack,
     art: card.image_uris?.art_crop || faces[0]?.image_uris?.art_crop || null,
+    artist: card.artist || faces[0]?.artist || null,
     type: card.type_line || faces[0]?.type_line || '',
     manaCost: card.mana_cost ?? faces.map((f) => f.mana_cost).filter(Boolean).join(' // '),
     cmc: card.cmc ?? 0,
@@ -83,8 +86,7 @@ async function lookupCards(names) {
   const found = new Map();
   const missing = [];
   for (const n of new Set(names)) {
-    // Le voci salvate dalle versioni precedenti non hanno il testo della carta: le aggiorno
-    if (cache[key(n)]?.oracle != null) found.set(n, cache[key(n)]);
+    if (complete(cache[key(n)])) found.set(n, cache[key(n)]);
     else missing.push(n);
   }
 
@@ -98,7 +100,7 @@ async function lookupCards(names) {
     });
     for (const card of data?.data || []) remember(card);
     for (const n of batch) {
-      if (cache[key(n)]?.oracle != null) found.set(n, cache[key(n)]);
+      if (complete(cache[key(n)])) found.set(n, cache[key(n)]);
       else stillMissing.push(n);
     }
   }

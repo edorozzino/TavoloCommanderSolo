@@ -942,3 +942,9 @@ button.primary { background: linear-gradient(180deg, #d8b45c, #b48d36); color: #
 button.urgent:not(:disabled) { animation: pass-pulse 1.1s ease-in-out infinite; }
 @keyframes pass-pulse { 50% { box-shadow: 0 0 0 3px rgba(201, 162, 74, .5), 0 0 18px rgba(201, 162, 74, .8); } }
 @media (prefers-reduced-motion: reduce) { button.urgent:not(:disabled) { animation: none; box-shadow: 0 0 0 3px rgba(201, 162, 74, .6); } }
+
+/* Artista sotto le carte ingrandite e avviso legale nel menu */
+.credit { font-size: 11px; color: var(--muted); text-align: center; margin-top: 4px; }
+.mg-preview { flex-direction: column; }
+.legal { font-size: 11px; line-height: 1.4; color: var(--muted); margin: 12px 0 0; }
+.legal a { color: inherit; }

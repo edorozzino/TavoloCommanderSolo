@@ -234,3 +234,12 @@ Il tavolo manuale resta disponibile per giocare con qualsiasi carta; la "Partita
 
 Magic: The Gathering è un marchio di Wizards of the Coast. Questo progetto non è affiliato né approvato da Wizards of the Coast.
 I dati e le immagini delle carte sono forniti da [Scryfall](https://scryfall.com).
+
+## Avviso legale
+
+Tavolo Commander è un progetto non ufficiale di fan, gratuito e senza scopo di lucro, consentito dalla
+[Fan Content Policy](https://company.wizards.com/it/legal/fancontentpolicy) di Wizards of the Coast. Non è approvato né
+sponsorizzato da Wizards of the Coast. Parte dei materiali usati è proprietà di Wizards of the Coast. ©Wizards of the Coast LLC.
+
+Immagini e dati delle carte provengono da [Scryfall](https://scryfall.com) e non sono inclusi nel progetto: vengono caricati
+al momento. Le illustrazioni appartengono ai rispettivi artisti, il cui nome compare sotto ogni carta ingrandita.

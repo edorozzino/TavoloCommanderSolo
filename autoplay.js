@@ -44,7 +44,7 @@ function deckContents(deckId) {
 }
 
 function getRoom(code) {
-  if (!rooms.has(code)) rooms.set(code, { code, players: new Map(), order: [], host: null, game: null, log: [], sockets: new Set(), seen: 0, images: {}, arts: {} });
+  if (!rooms.has(code)) rooms.set(code, { code, players: new Map(), order: [], host: null, game: null, log: [], sockets: new Set(), seen: 0, images: {}, arts: {}, artists: {} });
   return rooms.get(code);
 }
 
@@ -110,7 +110,7 @@ function broadcast(room) {
     const msg = { t: 'autoState', room: room.code, me: ws.pid, lobby, log: room.log.slice(-120), autoPass: !room.lesson && room.players.get(ws.pid)?.autoPass !== false };
     if (room.lesson) msg.lesson = lessons.lessonStatus(room.lesson);
     if (room.game) {
-      msg.game = buildView(room.game, ws.pid, { names, images: room.images, arts: room.arts });
+      msg.game = buildView(room.game, ws.pid, { names, images: room.images, arts: room.arts, artists: room.artists });
       msg.stepName = STEP_NAMES[room.game.step];
     } else {
       msg.decks = deckChoices();
@@ -130,7 +130,7 @@ async function start(room) {
   const names = [...new Set(seats.flatMap((s) => [...s.commanders, ...s.library]))];
   try {
     const { found } = await lookupCards(names);
-    for (const [n, info] of found) { room.images[n] = info.img; room.arts[n] = info.art; }
+    for (const [n, info] of found) { room.images[n] = info.img; room.arts[n] = info.art; room.artists[n] = info.artist; }
   } catch { /* senza internet si gioca con le carte di solo testo */ }
   room.game = createGame({ seed: crypto.randomInt(1, 2 ** 31), players: seats });
   room.seen = room.game.events.length;
@@ -160,7 +160,7 @@ async function handle(ws, msg) {
     const names = [...new Set([...session.game.objects.values()].map((o) => o.name))];
     try {
       const { found } = await lookupCards(names.concat(lessons.LESSON_CARDS || []));
-      for (const [n, info] of found) { room.images[n] = info.img; room.arts[n] = info.art; }
+      for (const [n, info] of found) { room.images[n] = info.img; room.arts[n] = info.art; room.artists[n] = info.artist; }
     } catch { /* si gioca anche senza immagini */ }
     log(room, `Lezione ${session.lesson.n}: ${session.lesson.title}. Obiettivo: ${session.lesson.goal}`);
     ws.autoRoom = room;
