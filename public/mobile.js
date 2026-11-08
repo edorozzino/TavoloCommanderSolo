@@ -139,7 +139,9 @@
   }
 
   function inGame() {
-    return ['#game', '#auto'].some((s) => !$(s).classList.contains('hidden'));
+    // nella sala d'attesa delle regole automatiche il verticale va benissimo: niente invito
+    const auto = !$('#auto').classList.contains('hidden') && !$('#auto .auto-lobby');
+    return auto || !$('#game').classList.contains('hidden');
   }
   function update() {
     const show = !dismissed && phone.matches && inGame();
@@ -170,5 +172,7 @@
   phone.addEventListener('change', update);
   const watch = new MutationObserver(update);
   for (const s of ['#game', '#auto', '#builder']) watch.observe($(s), { attributes: true, attributeFilter: ['class'] });
+  // l'interfaccia delle regole automatiche passa dalla sala alla partita senza cambiare classi
+  watch.observe($('#auto'), { childList: true, subtree: true });
   update();
 })();
