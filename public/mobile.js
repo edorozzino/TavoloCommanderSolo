@@ -126,14 +126,25 @@
     <button type="button" data-rh="close" aria-label="Chiudi">✕</button>`;
   document.body.appendChild(banner);
 
+  // L'invito compare una volta sola per dispositivo e sparisce da solo: copre la parte alta del tavolo
+  const AUTO_HIDE = 7000;
+  let autoHide = null;
   let dismissed = false;
-  try { dismissed = sessionStorage.getItem('ct-rotate-dismissed') === '1'; } catch {}
+  try { dismissed = localStorage.getItem('ct-rotate-seen') === '1'; } catch {}
+
+  function dismiss() {
+    dismissed = true;
+    clearTimeout(autoHide);
+    try { localStorage.setItem('ct-rotate-seen', '1'); } catch {}
+  }
 
   function inGame() {
-    return ['#game', '#auto', '#builder'].some((s) => !$(s).classList.contains('hidden'));
+    return ['#game', '#auto'].some((s) => !$(s).classList.contains('hidden'));
   }
   function update() {
-    banner.classList.toggle('hidden', dismissed || !phone.matches || !inGame());
+    const show = !dismissed && phone.matches && inGame();
+    banner.classList.toggle('hidden', !show);
+    if (show && !autoHide) autoHide = setTimeout(() => { dismiss(); update(); }, AUTO_HIDE);
   }
 
   banner.addEventListener('click', async (e) => {
@@ -146,10 +157,8 @@
       } catch {
         window.CT?.toast('Questo browser non permette di ruotare da qui: gira il telefono.');
       }
-    } else {
-      dismissed = true;
-      try { sessionStorage.setItem('ct-rotate-dismissed', '1'); } catch {}
     }
+    dismiss();
     update();
   });
 

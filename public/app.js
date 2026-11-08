@@ -410,6 +410,16 @@
     act('move', { iid: d.iid, to });
   });
 
+  // Il browser può riprendersi il tocco (per esempio per scorrere): il trascinamento si annulla senza lasciare residui
+  document.addEventListener('pointercancel', () => {
+    if (!drag) return;
+    const d = drag;
+    drag = null;
+    d.ghost?.remove();
+    d.el.classList.remove('dragging-src');
+    document.querySelectorAll('.drop-hover').forEach((x) => x.classList.remove('drop-hover'));
+  });
+
   // ---------- Doppio clic ----------
   document.addEventListener('dblclick', (e) => {
     if (!S) return;
