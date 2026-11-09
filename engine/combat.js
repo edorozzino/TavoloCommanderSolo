@@ -58,15 +58,56 @@ class Combat {
     return [...ids].map((id) => this.objects.get(id)).filter((o) => o && o.zone === 'battlefield');
   }
 
+  dealsDamageNow(o, firstStep) {
+    if (firstStep) return this.isFirstStriker(o);
+    return !this.combat.dealtFirst.has(o.id) || this.hasKw(o, 'Double strike'); // CR 510.4
+  }
+
+  lethalDamage(source, target) {
+    return this.hasKw(source, 'Deathtouch') ? 1 : Math.max(0, this.toughness(target) - target.damage);
+  }
+
+  // CR 510.1c: chi attacca divide il danno tra i bloccanti. Si chiede solo quando la forza non basta per
+  // ucciderli tutti: negli altri casi l'assegnazione automatica è già la migliore.
+  askDamageAssignments(firstStep) {
+    if (!this.askDamage) return false;
+    const needed = [];
+    for (const [id, a] of this.combat.attackers) {
+      const att = this.objects.get(id);
+      if (!att || att.zone !== 'battlefield' || !this.dealsDamageNow(att, firstStep)) continue;
+      const blockers = a.blockers.map((b) => this.objects.get(b)).filter((b) => b && b.zone === 'battlefield');
+      const power = this.power(att);
+      const total = blockers.reduce((sum, b) => sum + this.lethalDamage(att, b), 0);
+      if (blockers.length > 1 && power > 0 && power < total) needed.push({ att, blockers, power });
+    }
+    if (!needed.length) return false;
+    this.combat.assignments = new Map();
+    const next = (i) => {
+      if (i === needed.length) {
+        this.dealCombatDamage(firstStep);
+        this.givePriority(this.active);
+        return;
+      }
+      const { att, blockers, power } = needed[i];
+      this.ask({
+        type: 'assignDamage', player: att.controller, attacker: att.id, attackerName: att.name, power,
+        blockers: blockers.map((b) => ({ id: b.id, name: b.name, lethal: this.lethalDamage(att, b) })),
+        resume: (assignment) => {
+          this.combat.assignments.set(att.id, assignment);
+          next(i + 1);
+        },
+      });
+    };
+    next(0);
+    return true;
+  }
+
   // Danno da combattimento (CR 510): tutto il danno di un passo viene inflitto contemporaneamente
   dealCombatDamage(firstStep) {
-    const dealsNow = (o) => {
-      if (firstStep) return this.isFirstStriker(o);
-      return !this.combat.dealtFirst.has(o.id) || this.hasKw(o, 'Double strike'); // CR 510.4
-    };
+    const dealsNow = (o) => this.dealsDamageNow(o, firstStep);
     const alive = (o) => o && o.zone === 'battlefield';
     const hits = [];
-    const lethal = (source, target) => (this.hasKw(source, 'Deathtouch') ? 1 : Math.max(0, this.toughness(target) - target.damage));
+    const lethal = (source, target) => this.lethalDamage(source, target);
     for (const [id, a] of this.combat.attackers) {
       const att = this.objects.get(id);
       const power = alive(att) ? this.power(att) : 0;
@@ -76,10 +117,12 @@ class Combat {
         hits.push({ source: att, player: a.defender, amount: power });
         continue;
       }
-      // Assegnazione automatica: danno letale a ogni bloccante nell'ordine, il resto al giocatore se ha Travolgere
-      let left = power;
+      // Divisione scelta dal giocatore, oppure automatica: danno letale a ogni bloccante, il resto al giocatore se ha Travolgere
+      const chosen = this.combat.assignments?.get(id);
+      let left = chosen ? 0 : power;
       const given = new Map();
-      for (const b of blockers) {
+      if (chosen) for (const b of blockers) given.set(b, chosen[b.id] || 0);
+      else for (const b of blockers) {
         const n = Math.min(left, lethal(att, b));
         given.set(b, n);
         left -= n;
@@ -115,6 +158,7 @@ class Combat {
       if (kw.get(h.source).lifelink) this.state.get(h.source.controller).life += h.amount; // CR 702.15b
       this.events.push({ type: 'combatDamage', source: h.source.cardId, name: h.source.name, player: h.player, object: h.object?.id, target: h.object?.name, amount: h.amount });
     }
+    if (this.combat.assignments) this.combat.assignments.clear();
     // Inneschi "quando infligge danno da combattimento a un giocatore" (della creatura stessa o di chi la osserva)
     for (const h of hits) {
       if (!h.player) continue;

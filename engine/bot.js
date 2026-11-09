@@ -266,6 +266,15 @@ function decide(g, pid, d) {
       const handLands = hand.filter((o) => isType(o, 'Land')).length;
       return { type: 'confirm', yes: hand.length > 5 && (handLands < 2 || handLands > 5) };
     }
+    case 'assignDamage': { // uccide il maggior numero di bloccanti, partendo dai più facili
+      let left = d.power;
+      const assignment = {};
+      for (const b of [...d.blockers].sort((x, y) => x.lethal - y.lethal)) {
+        assignment[b.id] = Math.min(left, b.lethal);
+        left -= assignment[b.id];
+      }
+      return { type: 'assignDamage', assignment };
+    }
     case 'orderTriggers': return { type: 'orderTriggers', order: d.group.map((_, i) => i) };
     case 'search': return { type: 'search', objects: byValue(d.options).slice(0, d.max) };
     case 'scry': {

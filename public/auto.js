@@ -20,7 +20,7 @@
   const DECISION_NAMES = {
     declareAttackers: 'dichiarare gli attaccanti', declareBlockers: 'dichiarare i bloccanti', discard: 'scartare', chooseTarget: 'scegliere un bersaglio',
     confirm: 'decidere', search: 'cercare nel grimorio', scry: 'profetizzare', putBack: 'rimettere carte in cima', chooseCards: 'scegliere delle carte',
-    chooseSacrifice: 'scegliere cosa sacrificare', orderTriggers: 'ordinare le abilità innescate',
+    chooseSacrifice: 'scegliere cosa sacrificare', orderTriggers: 'ordinare le abilità innescate', assignDamage: 'dividere il danno',
   };
 
   let session = CT.store.get('ct-auto-session'); // { name, room, pid }
@@ -29,6 +29,7 @@
   let attack = null; // dichiarazione degli attaccanti in corso
   let block = null; // dichiarazione dei bloccanti in corso
   let picks = []; // carte scelte per scarti, rimesse in cima, ricerche
+  let split = null; // divisione del danno tra più bloccanti: { idBloccante: danni }
   let scryBottom = new Set();
   let lessonList = null; // elenco delle lezioni dell'Accademia
   // Schermata compatta (telefoni): avversario mostrato in grande, carta sollevata dalla mano, carta in anteprima
@@ -136,6 +137,7 @@
     attack = null;
     block = null;
     picks = [];
+    split = null;
     scryBottom = new Set();
   }
 
@@ -541,6 +543,17 @@
         return `<b>${d.type === 'discard' ? 'Scarta' : d.bottom ? 'Metti in fondo al grimorio' : 'Rimetti in cima al grimorio'} ${d.count} carte</b>
           <p>Clicca le carte nella tua mano${d.type === 'putBack' && !d.bottom ? ' (la prima scelta finisce in cima)' : ''}. Scelte: ${picks.length}/${d.count}</p>
           <button class="primary" data-auto="confirm-picks" ${picks.length === d.count ? '' : 'disabled'}>Conferma</button>`;
+      case 'assignDamage': {
+        if (!split) {
+          split = {};
+          let left = d.power;
+          for (const b of d.blockers) { split[b.id] = Math.min(left, b.lethal); left -= split[b.id]; }
+        }
+        const left = d.power - d.blockers.reduce((sum, b) => sum + split[b.id], 0);
+        return `<b>${esc(d.attackerName)}: dividi ${d.power} danni (restano ${left})</b>
+          ${d.blockers.map((b) => `<div class="dmg-row"><span title="${esc(b.name)}">${esc(b.name)} (letale ${b.lethal})</span><button data-dmg="${b.id}" data-delta="-1" ${split[b.id] ? '' : 'disabled'}>−</button><b>${split[b.id]}</b><button data-dmg="${b.id}" data-delta="1" ${left ? '' : 'disabled'}>+</button></div>`).join('')}
+          <button class="primary" data-auto="confirm-damage" ${left ? 'disabled' : ''}>Conferma</button>`;
+      }
       case 'orderTriggers':
         return `<b>Ordina le tue abilità innescate</b><p>Toccale nell'ordine in cui vuoi che si risolvano: la prima si risolve per prima.</p>
           <div class="aopts">${d.triggers.map((t) => { const n = picks.indexOf(t.index); return `<button class="${n >= 0 ? 'primary' : ''}" data-pick="${t.index}">${n >= 0 ? `${n + 1}. ` : ''}${esc(t.name)}</button>`; }).join('')}</div>
@@ -663,6 +676,10 @@
     if (btn?.dataset.unblock && block) { block.pairs.splice(Number(btn.dataset.unblock), 1); return render(); }
     if (btn?.dataset.yes && d?.type === 'confirm') return act({ type: 'confirm', yes: btn.dataset.yes === '1' });
     if (btn?.dataset.pile) return pileModal(btn.dataset.of, btn.dataset.pile);
+    if (btn?.dataset.dmg && split) {
+      split[btn.dataset.dmg] += Number(btn.dataset.delta);
+      return render();
+    }
     const pick = t.closest('[data-pick]');
     if (pick && d) {
       const id = Number(pick.dataset.pick);
@@ -702,6 +719,7 @@
         return act({ type: 'declareAttackers', attackers: [...attack.pairs].map(([object, defender]) => ({ object, defender })) });
       case 'confirm-block': return act({ type: 'declareBlockers', blocks: block.pairs });
       case 'confirm-picks': return act({ type: d.type, objects: picks });
+      case 'confirm-damage': return act({ type: 'assignDamage', assignment: split });
       case 'confirm-order': return act({ type: 'orderTriggers', order: picks });
       case 'auto-order': return act({ type: 'orderTriggers', order: d.triggers.map((t) => t.index) });
       case 'confirm-cards': return act(d.type === 'search' ? { type: 'search', objects: picks } : { type: 'chooseCards', objects: picks });

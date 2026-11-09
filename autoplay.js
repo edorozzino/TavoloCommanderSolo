@@ -134,7 +134,7 @@ async function start(room) {
     const { found } = await lookupCards(names);
     for (const [n, info] of found) { room.images[n] = info.img; room.arts[n] = info.art; room.artists[n] = info.artist; }
   } catch { /* senza internet si gioca con le carte di solo testo */ }
-  room.game = createGame({ seed: crypto.randomInt(1, 2 ** 31), mulligan: true, orderTriggers: true, players: seats });
+  room.game = createGame({ seed: crypto.randomInt(1, 2 ** 31), mulligan: true, orderTriggers: true, assignDamage: true, players: seats });
   room.seen = room.game.events.length;
   log(room, `La partita comincia: ${seats.map((s) => nameOf(room, s.id)).join(', ')}. Tocca a ${nameOf(room, room.game.active)}.`);
 }
