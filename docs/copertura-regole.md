@@ -17,7 +17,7 @@ In questa versione non ci sono i comandi manuali: dove compare ✋ l'effetto non
 | 601.2 | Lancio: bersagli, costo totale, pagamento | 🟡 | Mana pagato in automatico; manca la divisione di effetti tra bersagli (601.2d) |
 | 602 | Attivare abilità | ✅ | Per le carte programmate |
 | 603.2–603.3 | Inneschi sulla Pila in ordine APNAP | ✅ | |
-| 603.3b | Ordine scelto tra i propri inneschi simultanei | ❌ | Oggi lo decide il motore |
+| 603.3b | Ordine scelto tra i propri inneschi simultanei | ✅ | Non si chiede se sono indistinguibili; non nelle lezioni |
 | 603.4 | Condizione "se" controllata anche alla risoluzione | ❌ | |
 | 608.2b | Bersagli ricontrollati alla risoluzione | ✅ | Anche con bersagli solo in parte illegali |
 | 608.2n, 608.3 | Fine risoluzione, permanenti sul campo | ✅ | |

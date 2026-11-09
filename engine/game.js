@@ -33,7 +33,7 @@ function formatCost(cost) {
 }
 
 class Game {
-  constructor({ seed = 1, mulligan = false, players }) {
+  constructor({ seed = 1, mulligan = false, orderTriggers = false, players }) {
     if (!Array.isArray(players) || players.length < 2 || players.length > 4) {
       throw new Error('Una partita Commander richiede da 2 a 4 giocatori');
     }
@@ -48,6 +48,7 @@ class Game {
     this.decision = null; // scelta che un giocatore deve fare prima che il gioco prosegua
     this.pendingTriggers = []; // abilità innescate in attesa di andare sulla Pila (CR 603.3)
     this.triggerQueue = [];
+    this.askTriggerOrder = orderTriggers; // se attivo, ogni giocatore ordina i propri inneschi simultanei (CR 603.3b)
     this.eot = []; // effetti che durano fino alla fine del turno (CR 514.2)
     this.enteredThisTurn = {}; // Goblin entrati sotto il controllo di ciascun giocatore in questo turno
     this.onceThisTurn = new Set(); // abilità "solo una volta per turno" già innescate
@@ -738,6 +739,7 @@ class Game {
       this.pendingTriggers = [];
       this.triggerQueue.push(...fresh);
     }
+    if (this.askOrderOfTriggers()) return 'waiting';
     let placed = false;
     while (this.triggerQueue.length) {
       const t = this.triggerQueue.shift();
@@ -752,6 +754,27 @@ class Game {
       placed = true;
     }
     return placed;
+  }
+
+  // CR 603.3b: chi controlla più inneschi simultanei sceglie l'ordine, in APNAP. Se sono indistinguibili non si chiede.
+  askOrderOfTriggers() {
+    if (!this.askTriggerOrder) return false;
+    const key = (t) => `${t.source.name}:${(t.source.def.abilities || []).indexOf(t.ability)}`;
+    for (const t of this.triggerQueue) {
+      if (t.ordered) continue;
+      const group = this.triggerQueue.filter((x) => x.controller === t.controller && !x.ordered);
+      group.forEach((x) => { x.ordered = true; });
+      if (group.length < 2 || new Set(group.map(key)).size < 2) continue;
+      this.ask({
+        type: 'orderTriggers', player: t.controller, group,
+        resume: (placed) => {
+          const slots = group.map((x) => this.triggerQueue.indexOf(x));
+          placed.forEach((x, i) => { this.triggerQueue[slots[i]] = x; });
+        },
+      });
+      return true;
+    }
+    return false;
   }
 
   putTriggerOnStack(t, targets) {
@@ -1446,6 +1469,19 @@ Game.prototype.actions = {
     }
     this.decision = null;
     if (target != null) this.putTriggerOnStack(d.trigger, [target]);
+    this.givePriority(this.resumePid);
+  },
+
+  // order: gli indici degli inneschi nell'ordine in cui si risolveranno, dal primo all'ultimo
+  orderTriggers(pid, { order = [] }) {
+    const d = this.decision;
+    const n = d.group.length;
+    if (order.length !== n || new Set(order).size !== n || order.some((i) => !Number.isInteger(i) || i < 0 || i >= n)) {
+      throw new RuleError('INVALID_CHOICE', 'Indica un ordine per ogni abilità');
+    }
+    this.decision = null;
+    // chi si risolve per primo deve stare in cima alla Pila, quindi va messo per ultimo (CR 405.2)
+    d.resume([...order].reverse().map((i) => d.group[i]));
     this.givePriority(this.resumePid);
   },
 

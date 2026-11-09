@@ -266,6 +266,7 @@ function decide(g, pid, d) {
       const handLands = hand.filter((o) => isType(o, 'Land')).length;
       return { type: 'confirm', yes: hand.length > 5 && (handLands < 2 || handLands > 5) };
     }
+    case 'orderTriggers': return { type: 'orderTriggers', order: d.group.map((_, i) => i) };
     case 'search': return { type: 'search', objects: byValue(d.options).slice(0, d.max) };
     case 'scry': {
       const keep = (id) => (isType(g.object(id), 'Land') ? lands < 6 : true);
