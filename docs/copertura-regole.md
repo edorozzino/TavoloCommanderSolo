@@ -4,7 +4,7 @@ Confronto tra il motore (`engine/`) e le regole in vigore dal 6 novembre 2026. I
 qui compaiono solo numeri di regola e riassunti nostri. `node scripts/verifica-citazioni.js <regolamento.txt>` controlla che
 i numeri citati nel codice esistano ancora dopo un aggiornamento del regolamento.
 
-**Stato:** ✅ automatica · 🟡 parziale · ❌ mancante
+**Stato:** ✅ automatica · 🟡 parziale · ❌ mancante · — non serve alle carte programmate
 
 In questa versione non ci sono i comandi manuali: dove compare ✋ l'effetto non viene applicato.
 
@@ -18,7 +18,7 @@ In questa versione non ci sono i comandi manuali: dove compare ✋ l'effetto non
 | 602 | Attivare abilità | ✅ | Per le carte programmate |
 | 603.2–603.3 | Inneschi sulla Pila in ordine APNAP | ✅ | |
 | 603.3b | Ordine scelto tra i propri inneschi simultanei | ✅ | Non si chiede se sono indistinguibili; non nelle lezioni |
-| 603.4 | Condizione "se" controllata anche alla risoluzione | ❌ | |
+| 603.4 | Condizione "se" controllata anche alla risoluzione | — | Nessuna carta programmata la usa |
 | 608.2b | Bersagli ricontrollati alla risoluzione | ✅ | Anche con bersagli solo in parte illegali |
 | 608.2n, 608.3 | Fine risoluzione, permanenti sul campo | ✅ | |
 
@@ -29,8 +29,8 @@ In questa versione non ci sono i comandi manuali: dove compare ✋ l'effetto non
 | 704.5a–d, f–h | Vita, grimorio vuoto, veleno, token, danno letale, tocco letale | ✅ | |
 | 704.5j | Regola delle leggende | ✅ | |
 | 704.5q | Segnalini +1/+1 e -1/-1 si annullano | ✅ | |
-| 704.5i | Planeswalker a fedeltà 0 | ❌ | Fedeltà solo come segnalino manuale ✋ |
-| 704.5m–p | Aure e Equipaggiamenti non legalmente assegnati | ❌ | |
+| 704.5i | Planeswalker a fedeltà 0 | — | Nessun planeswalker tra le carte programmate |
+| 704.5m–p | Aure e Equipaggiamenti non legalmente assegnati | — | Nessuna Aura o Equipaggiamento tra le carte programmate |
 | 704.6c | 21 danni da comandante | ✅ | |
 | 704.6d | Comandante da cimitero o esilio alla zona di comando | ✅ | |
 
