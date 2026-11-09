@@ -59,7 +59,7 @@
   }, true);
 
   function cardImage(el) {
-    const card = el.closest('[data-img], [data-oid], [data-bname], .card');
+    const card = el.closest('[data-img], [data-oid], [data-pick], [data-scry], [data-bname], .card');
     if (!card) return null;
     if (card.dataset.img) return card.dataset.img;
     const inner = card.querySelector('img');
