@@ -136,7 +136,7 @@ function decisionView(g, d, viewer, ctx) {
     case 'chooseTarget': return { ...base, options: d.options, optional: d.optional, source: d.trigger?.source?.name };
     case 'search': return { ...base, cards: cards(d.options), max: d.max };
     case 'scry': return { ...base, cards: cards(d.cards) };
-    case 'chooseCards': return { ...base, cards: cards(d.options), count: d.count };
+    case 'chooseCards': return { ...base, cards: cards(d.options), count: d.count, prompt: d.prompt };
     case 'chooseSacrifice': return { ...base, options: d.options };
     case 'discard': case 'putBack': return { ...base, count: d.count };
     case 'confirm': return { ...base, prompt: d.prompt };

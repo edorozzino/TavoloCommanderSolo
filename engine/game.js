@@ -88,7 +88,7 @@ class Game {
         lib.unshift(lib.pop());
         return id;
       },
-      moveTo: (id, zone, opts = {}) => this.move(id, zone, { controlSince: opts.sick === false ? -1 : undefined }),
+      moveTo: (id, zone, opts = {}) => this.move(id, zone, { manual: true, controlSince: opts.sick === false ? -1 : undefined }),
       createToken: (pid, name) => this.createToken(pid, name, { controlSince: -1 }),
       gainControl: (id, pid) => Object.assign(this.objects.get(id), { controller: pid, controlSince: this.turn }),
       setControlSince: (id, turn) => { this.objects.get(id).controlSince = turn; },
@@ -332,6 +332,8 @@ class Game {
   // va sempre nelle zone del proprietario (CR 400.3)
   move(id, zone, opts = {}) {
     const leaving = this.objects.get(id);
+    if (leaving.isCommander && (zone === 'hand' || zone === 'library') && !opts.manual
+      && this.state.get(leaving.owner).preferences.commanderToCommandZone) zone = 'command'; // CR 903.9b
     if (leaving.zone === 'battlefield' && zone !== 'battlefield') {
       for (const a of this.triggersOf(leaving, 'leaves')) this.queueTrigger(leaving, a); // CR 603.6c
     }
@@ -353,7 +355,7 @@ class Game {
       cardId: o.cardId, isCommander: o.isCommander, targets: opts.targets, controlSince: opts.controlSince,
       controller: opts.controller, def: o.isToken ? o.def : undefined, isToken: o.isToken, tapped: opts.tapped,
     });
-    if (opts.top) {
+    if (opts.top && zone === 'library') {
       const lib = this.state.get(o.owner).zones.library;
       lib.unshift(lib.pop());
     }
@@ -432,7 +434,7 @@ class Game {
     next(0);
   }
 
-  // Macinare: le prime carte del grimorio vanno nel cimitero (CR 701.13)
+  // Macinare: le prime carte del grimorio vanno nel cimitero (CR 701.17)
   mill(pid, n) {
     for (const id of this.state.get(pid).zones.library.slice(0, n)) this.move(id, 'graveyard');
   }
@@ -550,6 +552,7 @@ class Game {
         this.priority = null;
         return;
       }
+      if (this.askLegendRule()) return;
       const placed = this.flushTriggers();
       if (placed === 'waiting') return;
       if (!placed) break;
@@ -579,6 +582,15 @@ class Game {
         this.toGraveyard(dying);
         changed = true;
       }
+      for (const o of this.battlefield()) { // CR 704.5q
+        const n = Math.min(o.counters['+1/+1'] || 0, o.counters['-1/-1'] || 0);
+        if (!n) continue;
+        for (const kind of ['+1/+1', '-1/-1']) {
+          o.counters[kind] -= n;
+          if (!o.counters[kind]) delete o.counters[kind];
+        }
+        changed = true;
+      }
       for (const o of [...this.objects.values()]) {
         if (o.isToken && o.zone !== 'battlefield') { // CR 704.5d
           this.remove(o.id);
@@ -595,10 +607,39 @@ class Game {
     }
   }
 
-  // Un giocatore lascia la partita con tutti gli oggetti che possiede (CR 800.4a)
+  // Regola delle leggende (CR 704.5j): il controllore sceglie quale tenere, le altre vanno nel cimitero.
+  // Richiede una scelta, quindi sospende la priorità finché il giocatore non risponde.
+  askLegendRule() {
+    const groups = new Map();
+    for (const o of this.battlefield()) {
+      if (!(o.def.supertypes || []).includes('Legendary')) continue;
+      const key = `${o.controller}\n${o.name}`;
+      groups.set(key, [...(groups.get(key) || []), o]);
+    }
+    const group = [...groups.values()].find((list) => list.length > 1);
+    if (!group) return false;
+    const pid = this.resumePid;
+    this.ask({
+      type: 'chooseCards', player: group[0].controller, options: group.map((o) => o.id), count: 1, keep: true,
+      prompt: `Regola delle leggende: scegli quale ${group[0].name} tenere`,
+      resume: ([kept]) => {
+        this.toGraveyard(group.filter((o) => o.id !== kept));
+        this.givePriority(pid);
+      },
+    });
+    return true;
+  }
+
+  // Un giocatore lascia la partita con tutti gli oggetti che possiede; finiscono anche gli effetti che gli davano
+  // il controllo di oggetti altrui, e ciò che controlla ancora viene esiliato (CR 800.4a)
   eliminate(pid) {
     this.state.get(pid).lost = true;
     for (const o of [...this.objects.values()]) if (o.owner === pid) this.remove(o.id);
+    for (const o of [...this.objects.values()]) {
+      if (o.controller !== pid) continue;
+      if (o.zone === 'battlefield') Object.assign(o, { controller: o.owner, controlSince: this.turn });
+      else if (o.zone === 'stack') this.move(o.id, 'exile');
+    }
     this.pendingTriggers = this.pendingTriggers.filter((t) => t.controller !== pid);
     this.triggerQueue = this.triggerQueue.filter((t) => t.controller !== pid);
     this.events.push({ type: 'lose', player: pid });
@@ -743,7 +784,7 @@ class Game {
         for (const t of hit) this.dealDamage(t, n);
         break;
       }
-      case 'counter': // CR 701.5a
+      case 'counter': // CR 701.6a
         for (const t of ctx.targets) {
           const spell = this.objects.get(t.object);
           const controller = spell.controller;
@@ -965,7 +1006,7 @@ class Game {
           resume: (yes) => { if (yes) back(); resume(); } });
         return true;
       }
-      case 'search': { // la ricerca può non trovare nulla (CR 701.19b); poi si mescola
+      case 'search': { // la ricerca può non trovare nulla (CR 701.23); poi si mescola
         const options = this.zone(ctx.controller, 'library').filter((o) => F.CARD[effect.filter](o)).map((o) => o.id);
         this.ask({ type: 'search', player: ctx.controller, options, max: effect.max || 1,
           resume: (ids) => {

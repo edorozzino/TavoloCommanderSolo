@@ -91,7 +91,7 @@ test('una creatura con Volare può essere bloccata solo da creature con Volare o
   assert.equal(g.player('B').life, 40);
 });
 
-test('una creatura con Minacciare deve essere bloccata da almeno due creature (CR 702.110b)', () => {
+test('una creatura con Minacciare deve essere bloccata da almeno due creature (CR 702.111b)', () => {
   const g = commanderGame();
   const brute = on(g, 'A', 'Boggart Brute');
   const [b1, b2] = [on(g, 'B', 'Grizzly Bears'), on(g, 'B', 'Grizzly Bears')];
