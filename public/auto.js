@@ -551,7 +551,7 @@
         }
         const left = d.power - d.blockers.reduce((sum, b) => sum + split[b.id], 0);
         return `<b>${esc(d.attackerName)}: dividi ${d.power} danni (restano ${left})</b>
-          ${d.blockers.map((b) => `<div class="dmg-row"><span title="${esc(b.name)}">${esc(b.name)} (letale ${b.lethal})</span><button data-dmg="${b.id}" data-delta="-1" ${split[b.id] ? '' : 'disabled'}>−</button><b>${split[b.id]}</b><button data-dmg="${b.id}" data-delta="1" ${left ? '' : 'disabled'}>+</button></div>`).join('')}
+          ${d.blockers.map((b) => `<div class="dmg-row"><span title="${esc(b.name)}">${esc(b.name)}<small>letale ${b.lethal}</small></span><button data-dmg="${b.id}" data-delta="-1" ${split[b.id] ? '' : 'disabled'}>−</button><b>${split[b.id]}</b><button data-dmg="${b.id}" data-delta="1" ${left ? '' : 'disabled'}>+</button></div>`).join('')}
           <button class="primary" data-auto="confirm-damage" ${left ? 'disabled' : ''}>Conferma</button>`;
       }
       case 'orderTriggers':
