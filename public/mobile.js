@@ -147,7 +147,40 @@
     const show = !dismissed && phone.matches && inGame();
     banner.classList.toggle('hidden', !show);
     if (show && !autoHide) autoHide = setTimeout(() => { dismiss(); update(); }, AUTO_HIDE);
+    syncWakeLock();
   }
+
+  // In partita lo schermo resta acceso anche durante i turni altrui. Il blocco cade da solo quando l'app va in secondo piano.
+  const WAKE_RETRY = 10000;
+  let wakeLock = null;
+  let wakePending = false;
+  let wakeFailedAt = 0;
+
+  async function syncWakeLock() {
+    if (!navigator.wakeLock || !coarsePointer()) return;
+    const wanted = () => inGame() && document.visibilityState === 'visible';
+    if (!wanted()) {
+      const lock = wakeLock;
+      wakeLock = null;
+      lock?.release().catch(() => {});
+      return;
+    }
+    if (wakeLock || wakePending || Date.now() - wakeFailedAt < WAKE_RETRY) return;
+    wakePending = true;
+    try {
+      const lock = await navigator.wakeLock.request('screen');
+      lock.addEventListener('release', () => { if (wakeLock === lock) wakeLock = null; });
+      wakeLock = lock;
+      if (!wanted()) syncWakeLock();
+    } catch {
+      wakeFailedAt = Date.now(); // alcuni browser lo concedono solo dopo un tocco: si riprova al prossimo
+    } finally {
+      wakePending = false;
+    }
+  }
+  const coarsePointer = () => matchMedia('(pointer: coarse)').matches;
+  document.addEventListener('visibilitychange', update);
+  document.addEventListener('pointerdown', () => { wakeFailedAt = 0; syncWakeLock(); }, { passive: true });
 
   banner.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-rh]');
