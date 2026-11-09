@@ -538,8 +538,8 @@
         return `<b>Scegli cosa sacrificare</b><div class="aopts">${d.options.map((id) => `<button data-dsac="${id}">${esc(findObject(id)?.name)}</button>`).join('')}</div>`;
       case 'discard':
       case 'putBack':
-        return `<b>${d.type === 'discard' ? 'Scarta' : 'Rimetti in cima al grimorio'} ${d.count} carte</b>
-          <p>Clicca le carte nella tua mano${d.type === 'putBack' ? ' (la prima scelta finisce in cima)' : ''}. Scelte: ${picks.length}/${d.count}</p>
+        return `<b>${d.type === 'discard' ? 'Scarta' : d.bottom ? 'Metti in fondo al grimorio' : 'Rimetti in cima al grimorio'} ${d.count} carte</b>
+          <p>Clicca le carte nella tua mano${d.type === 'putBack' && !d.bottom ? ' (la prima scelta finisce in cima)' : ''}. Scelte: ${picks.length}/${d.count}</p>
           <button class="primary" data-auto="confirm-picks" ${picks.length === d.count ? '' : 'disabled'}>Conferma</button>`;
       case 'confirm':
         return `<b>${esc(d.prompt)}</b><div class="row"><button class="primary" data-yes="1">Sì</button><button data-yes="0">No</button></div>`;

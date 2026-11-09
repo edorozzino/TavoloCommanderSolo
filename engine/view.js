@@ -138,7 +138,7 @@ function decisionView(g, d, viewer, ctx) {
     case 'scry': return { ...base, cards: cards(d.cards) };
     case 'chooseCards': return { ...base, cards: cards(d.options), count: d.count, prompt: d.prompt };
     case 'chooseSacrifice': return { ...base, options: d.options };
-    case 'discard': case 'putBack': return { ...base, count: d.count };
+    case 'discard': case 'putBack': return { ...base, count: d.count, bottom: d.bottom };
     case 'confirm': return { ...base, prompt: d.prompt };
     default: return base; // dichiarazione di attaccanti e bloccanti: l'interfaccia usa il campo di battaglia
   }

@@ -260,7 +260,12 @@ function decide(g, pid, d) {
       const t = pickTarget(g, pid, e, d.options);
       return { type: 'chooseTarget', target: t || (d.optional ? null : d.options[0]) };
     }
-    case 'confirm': return { type: 'confirm', yes: true };
+    case 'confirm': {
+      if (!d.mulligan) return { type: 'confirm', yes: true };
+      const hand = g.zone(pid, 'hand');
+      const handLands = hand.filter((o) => isType(o, 'Land')).length;
+      return { type: 'confirm', yes: hand.length > 5 && (handLands < 2 || handLands > 5) };
+    }
     case 'search': return { type: 'search', objects: byValue(d.options).slice(0, d.max) };
     case 'scry': {
       const keep = (id) => (isType(g.object(id), 'Land') ? lands < 6 : true);

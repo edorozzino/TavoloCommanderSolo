@@ -33,7 +33,7 @@ function formatCost(cost) {
 }
 
 class Game {
-  constructor({ seed = 1, players }) {
+  constructor({ seed = 1, mulligan = false, players }) {
     if (!Array.isArray(players) || players.length < 2 || players.length > 4) {
       throw new Error('Una partita Commander richiede da 2 a 4 giocatori');
     }
@@ -101,7 +101,75 @@ class Game {
       setPreference: (pid, key, value) => { this.state.get(pid).preferences[key] = value; },
     };
 
-    this.enterStep('untap');
+    if (mulligan) this.startMulligans();
+    else this.enterStep('untap');
+  }
+
+  // ---------- Mulligan (CR 103.5) ----------
+  startMulligans() {
+    this.step = 'mulligan';
+    this.mulligansTaken = new Map(this.seats.map((p) => [p, 0]));
+    this.mulliganRound(this.seats);
+  }
+
+  // Quante carte finiscono in fondo dopo N mulligan: in multiplayer il primo è gratis (CR 103.5c)
+  mulliganBottomCount(taken) {
+    return this.seats.length > 2 ? Math.max(0, taken - 1) : taken;
+  }
+
+  // Un giro di dichiarazioni in ordine di turno; i mulligan si fanno poi tutti insieme.
+  // Chi tiene la mano esce dal giro; con una mano già a zero carte non si può più fare mulligan.
+  mulliganRound(players) {
+    const asked = players.filter((p) => this.mulliganBottomCount(this.mulligansTaken.get(p)) < 7);
+    if (!asked.length) {
+      this.enterStep('untap');
+      return;
+    }
+    const takers = [];
+    const declare = (i) => {
+      if (i === asked.length) {
+        if (takers.length) this.takeMulligans(takers);
+        else this.enterStep('untap');
+        return;
+      }
+      const pid = asked[i];
+      const bottom = this.mulliganBottomCount(this.mulligansTaken.get(pid) + 1);
+      this.ask({
+        type: 'confirm', player: pid, mulligan: true,
+        prompt: `Vuoi fare mulligan? Rimescoli la mano e peschi 7 carte${bottom ? `, poi ne metti ${bottom} in fondo al grimorio` : ' (il primo è gratis)'}.`,
+        resume: (yes) => {
+          if (yes) takers.push(pid);
+          declare(i + 1);
+        },
+      });
+    };
+    declare(0);
+  }
+
+  takeMulligans(takers) {
+    const mark = this.events.length; // le carte che si rimescolano sono nascoste: non devono finire nel registro
+    for (const pid of takers) {
+      const s = this.state.get(pid);
+      for (const id of [...s.zones.hand]) this.move(id, 'library', { manual: true });
+      this.rng.shuffle(s.zones.library);
+      this.draw(pid, 7);
+      this.mulligansTaken.set(pid, this.mulligansTaken.get(pid) + 1);
+    }
+    this.events.length = mark;
+    for (const pid of takers) this.events.push({ type: 'mulligan', player: pid });
+    const bottom = (i) => {
+      if (i === takers.length) {
+        this.mulliganRound(takers);
+        return;
+      }
+      const count = this.mulliganBottomCount(this.mulligansTaken.get(takers[i]));
+      if (!count) {
+        bottom(i + 1);
+        return;
+      }
+      this.ask({ type: 'putBack', player: takers[i], count, bottom: true, resume: () => bottom(i + 1) });
+    };
+    bottom(0);
   }
 
   // ---------- Lettura dello stato ----------
@@ -1339,6 +1407,13 @@ Game.prototype.actions = {
       throw new RuleError('INVALID_CHOICE', `Scegli ${d.count} carte dalla tua mano`);
     }
     this.decision = null;
+    if (d.bottom) {
+      const mark = this.events.length;
+      for (const id of objects) this.move(id, 'library', { manual: true }); // in fondo, senza rivelarle nel registro
+      this.events.length = mark;
+      d.resume();
+      return;
+    }
     for (const id of [...objects].reverse()) this.move(id, 'library', { top: true }); // la prima scelta finisce in cima
     d.resume();
   },

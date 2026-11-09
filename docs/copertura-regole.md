@@ -54,7 +54,7 @@ In questa versione non ci sono i comandi manuali: dove compare ✋ l'effetto non
 
 | Regola | Argomento | Stato | Note |
 |---|---|---|---|
-| 103.5 | Mulligan | ❌ | Tutti tengono le prime 7 carte |
+| 103.5 | Mulligan | ✅ | Primo gratis in multiplayer (103.5c); non nelle lezioni dell'Accademia |
 | 800.4a | Uscita di un giocatore | ✅ | |
 | 903.4–903.5 | Identità di colore e costruzione del mazzo | ✅ | |
 | 903.8 | Tassa del comandante | ✅ | |

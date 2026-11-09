@@ -17,6 +17,18 @@ async function table(room) {
   return { a, b };
 }
 
+// Tutti i giocatori umani tengono la mano; i computer rispondono da soli dopo una breve pausa
+async function keepHands(...sockets) {
+  for (let i = 0; i < 60; i++) {
+    const views = sockets.map((s) => s.last('autoState').game);
+    if (views[0].step !== 'mulligan') return;
+    const turn = sockets.find((s, j) => views[j].decision?.player === views[j].me);
+    if (turn) await autoplay.handle(turn, { t: 'autoAct', action: { type: 'confirm', yes: false } });
+    else await new Promise((r) => setTimeout(r, 100));
+  }
+  throw new Error('il mulligan non si è concluso');
+}
+
 test('due giocatori scelgono un mazzo iniziale e chi ha creato il tavolo avvia la partita', async () => {
   const { a, b } = await table('t-start');
   await autoplay.handle(b, { t: 'autoStart' });
@@ -40,6 +52,7 @@ test('un mazzo salvato con carte sconosciute al motore non si può scegliere', a
 test("un'azione illegale è rifiutata con il motivo; una legale fa avanzare la partita e finisce nel registro", async () => {
   const { a, b } = await table('t-act');
   await autoplay.handle(a, { t: 'autoStart' });
+  await keepHands(a, b);
   const v = a.last('autoState').game;
   const active = v.active === v.me ? a : b;
   const other = active === a ? b : a;
@@ -58,6 +71,7 @@ test('chi ha creato il tavolo aggiunge un giocatore computer, che gioca da solo 
   assert.equal(lobby.players.length, 2);
   assert.equal(lobby.players[1].bot, true);
   await autoplay.handle(a, { t: 'autoStart' });
+  await keepHands(a);
   const g = a.last('autoState').game;
   assert.equal(g.players.length, 2);
   // Anna passa finché non tocca al computer, poi il computer risponde da solo dopo una breve pausa
