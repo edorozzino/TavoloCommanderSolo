@@ -32,12 +32,15 @@
     press = null;
   }
 
-  // Android apre già da solo il menu con la pressione lunga: in quel caso non lo riapriamo
+  // Android genera da solo un "contextmenu" con la pressione lunga, prima del nostro timer: lo sostituiamo con il
+  // nostro, altrimenti dove non c'è un menu (vista Arena, liste di scelta) la carta non si ingrandirebbe mai
   document.addEventListener('contextmenu', (e) => {
-    if (press && e.isTrusted) {
-      press.native = true;
-      suppressClickUntil = Date.now() + 700;
-    }
+    if (!press || !e.isTrusted || e.target.closest('input, textarea, select')) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const { target, x, y } = press;
+    cancelPress();
+    longPress(target, x, y);
   }, true);
 
   function longPress(target, x, y) {
