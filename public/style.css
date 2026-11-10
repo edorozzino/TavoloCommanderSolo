@@ -18,6 +18,9 @@
 html, body { margin: 0; height: 100%; }
 /* Safari non deve ingrandire il testo per conto suo */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* È un tavolo da gioco, non una pagina: niente zoom con due dita o doppio tocco, e la schermata non si trascina.
+   Le carte si ingrandiscono tenendole premute. */
+html, body { touch-action: pan-x pan-y; overscroll-behavior: none; }
 body {
   background: var(--bg);
   color: var(--text);
